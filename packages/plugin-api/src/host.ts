@@ -34,7 +34,7 @@ import type {
   ToolContribution,
   ToolPreviewShape,
 } from "./editor";
-import type { SceneLayer } from "./wire";
+import type { PixelLayer, SceneLayer } from "./wire";
 
 import type { AssetSurface } from "./assets";
 import type { ClipboardSurface } from "./clipboard";
@@ -308,6 +308,19 @@ export interface ContributionSurface {
    * layer it submitted.
    */
   sceneLayer(): SceneLayerSurface;
+  /**
+   * Open a PIXEL-LAYER surface (C-1 Stage B): submit RGBA8 tiles that
+   * composite INSIDE a frame, in frame-content coordinates — a streaming
+   * scene-layer variant for raster content (e.g. paged.image brush
+   * previews). Core applies the frame's `ItemTransform` and clips to the
+   * content box, so the plugin never compensates for the transform.
+   * Capability-gated on the SAME `rendering ∋ "sceneLayer"` (a pixel layer
+   * is a streaming scene-layer variant — no separate capability). Probe
+   * `supports("rendering.pixelLayer@1")` — false when the host wires no
+   * pixel channel (the surface then warns + no-ops). The returned surface
+   * is disposable: disposing it clears every layer it submitted.
+   */
+  pixelLayer(): PixelLayerSurface;
 }
 
 /** The scene-layer surface (C-1) returned by `contribute.sceneLayer()`.
@@ -315,6 +328,17 @@ export interface ContributionSurface {
 export interface SceneLayerSurface extends Disposable {
   /** Submit (replacing any previous) the vector layer for `elementId`. */
   submit(elementId: string, layer: SceneLayer): Promise<void>;
+  /** Clear the layer for `elementId` (returns the frame to native
+   *  content). */
+  clear(elementId: string): Promise<void>;
+}
+
+/** The pixel-layer surface (C-1 Stage B) returned by
+ *  `contribute.pixelLayer()`. `elementId` is the host `Self` id of the
+ *  frame to render into. */
+export interface PixelLayerSurface extends Disposable {
+  /** Submit (replacing any previous) the pixel layer for `elementId`. */
+  submit(elementId: string, layer: PixelLayer): Promise<void>;
   /** Clear the layer for `elementId` (returns the frame to native
    *  content). */
   clear(elementId: string): Promise<void>;

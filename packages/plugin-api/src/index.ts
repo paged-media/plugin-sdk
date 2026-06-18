@@ -38,6 +38,7 @@ export type {
   BundleHost,
   ContributionSurface,
   SceneLayerSurface,
+  PixelLayerSurface,
   ImagesSurface,
   ImageResourceClaimOptions,
   TileBytes,

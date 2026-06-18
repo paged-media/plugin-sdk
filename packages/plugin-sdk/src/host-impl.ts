@@ -54,6 +54,7 @@ import type {
   PluginMetadataEnvelope,
   SceneTreeNode,
   SceneLayerSurface,
+  PixelLayerSurface,
   SchemaPanelContribution,
   SchemaPanelRenderer,
   SelectionMode,
@@ -884,6 +885,51 @@ export function createBundleHost(
               `contribute.sceneLayer().submit("${elementId}") ignored — the ` +
                 `host wired no scene channel (probe ` +
                 `supports("rendering.sceneLayer@1"))`,
+            );
+            return;
+          }
+          submitted.add(elementId);
+          await ch.submit(elementId, layer);
+        },
+        async clear(elementId) {
+          submitted.delete(elementId);
+          await channel()?.clear(elementId);
+        },
+        dispose() {
+          const ch = channel();
+          if (ch) {
+            for (const id of submitted) void ch.clear(id);
+          }
+          submitted.clear();
+        },
+      };
+      return store.add(surface);
+    },
+    // C-1 Stage B — the in-frame PIXEL-layer surface (a streaming
+    // scene-layer variant). Gated on the SAME `rendering ∋ sceneLayer`
+    // capability (a pixel layer is just a raster scene-layer variant — no
+    // separate capability); routes submit/clear to the editor's pixel
+    // channel (`getEditor().pixelLayers` → canvas-wasm submit/clear). When
+    // no channel is wired (headless / older editor) the surface warns +
+    // no-ops (probe `supports("rendering.pixelLayer@1")`). Disposing the
+    // surface clears every layer it submitted (tracked so host.dispose()
+    // tears them down).
+    pixelLayer() {
+      requireDeclared(
+        hasRendering("sceneLayer"),
+        "contribute.pixelLayer",
+        'capabilities.rendering must include "sceneLayer"',
+      );
+      const submitted = new Set<string>();
+      const channel = () => getEditor().pixelLayers;
+      const surface: PixelLayerSurface = {
+        async submit(elementId, layer) {
+          const ch = channel();
+          if (!ch) {
+            log.warn(
+              `contribute.pixelLayer().submit("${elementId}") ignored — the ` +
+                `host wired no pixel channel (probe ` +
+                `supports("rendering.pixelLayer@1"))`,
             );
             return;
           }
@@ -2000,6 +2046,14 @@ export function createBundleHost(
     // exists (warns + no-ops without this); the flag tells a bundle the
     // in-frame layer will actually render.
     featureSet.add("rendering.sceneLayer@1");
+  }
+  if (getEditor().pixelLayers) {
+    // C-1 Stage B — a real pixel channel is wired (the editor routes to the
+    // canvas-wasm submitPixelLayer/clearPixelLayer). The
+    // contribute.pixelLayer() door always exists (warns + no-ops without
+    // this); the flag tells a bundle the in-frame raster layer will
+    // actually render.
+    featureSet.add("rendering.pixelLayer@1");
   }
   if (getEditor().images) {
     // C-6 (I-06) — a real resource channel is wired (the editor routes the

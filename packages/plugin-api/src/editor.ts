@@ -33,6 +33,7 @@ import type {
   Mutation,
   PageId,
   PathAnchorsResult,
+  PixelLayer,
   ProviderTileWire,
   ResourceTilesNeededWire,
   SceneLayer,
@@ -513,6 +514,17 @@ export interface PagedEditor {
    *  then warns + no-ops and `supports("rendering.sceneLayer@1")` is false. */
   sceneLayers?: {
     submit(elementId: string, layer: SceneLayer): Promise<void>;
+    clear(elementId: string): Promise<void>;
+  };
+  /** C-1 Stage B — in-frame plugin PIXEL layers (a streaming scene-layer
+   *  variant). The editor routes these to the canvas-wasm
+   *  `submitPixelLayer` / `clearPixelLayer` channel (async, across the
+   *  worker boundary). `undefined` when the host build wires no pixel
+   *  channel (headless / older editor); `host.contribute.pixelLayer()`
+   *  then warns + no-ops and `supports("rendering.pixelLayer@1")` is
+   *  false. */
+  pixelLayers?: {
+    submit(elementId: string, layer: PixelLayer): Promise<void>;
     clear(elementId: string): Promise<void>;
   };
   /** C-6 (I-06) — the renderer RESOURCE-PROVIDER channel. The editor
