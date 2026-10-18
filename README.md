@@ -1,3 +1,8 @@
+> [!IMPORTANT]
+> **This repository has moved to [paged-media/paged](https://github.com/paged-media/paged/tree/main/platform/extensions).**
+> Its code now live in `platform/extensions/` there, with the full history. This repository is frozen
+> and will be archived: open issues and pull requests in paged-media/paged.
+
 # paged-media/plugin-sdk
 
 Plugin contract + tooling for the Paged editor. Five packages: the contract,
